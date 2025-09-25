@@ -35,6 +35,18 @@ int addConst(Chunk *chunk, Value value) {
   writeValueArray(&chunk->constants, value);
   return chunk->constants.length - 1;
 }
+void writeConst(Chunk *chunk, Value value, int line) {
+  int constantIndex = addConst(chunk, value);
+
+  if (constantIndex <= 255) {
+    writeChunk(chunk, OP_CONSTANT, line, 0);
+    writeChunk(chunk, (uint8_t)constantIndex, line, 0);
+  } else {
+    writeChunk(chunk, OP_CONSTANT_LONG, line, 0);
+    writeChunk(chunk, (uint8_t)(constantIndex & 0xFF), line, 0);
+    writeChunk(chunk, (uint8_t)((constantIndex >> 8) & 0xFF), line, 0);
+  }
+}
 
 IMPLEMENT_ARRAY_FUNCTIONS(int, LineStart)
 

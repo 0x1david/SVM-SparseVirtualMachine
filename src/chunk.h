@@ -5,7 +5,7 @@
 #include "memory.h"
 #include "value.h"
 
-typedef enum { OP_RETURN, OP_CONSTANT } OpCode;
+typedef enum { OP_RETURN, OP_CONSTANT, OP_CONSTANT_LONG } OpCode;
 
 typedef struct {
   int length;
@@ -27,6 +27,7 @@ void initChunk(Chunk *chunk);
 void writeChunk(Chunk *chunk, uint8_t byte, int line, int offset);
 void freeChunk(Chunk *chunk);
 int addConst(Chunk *chunk, Value value);
+void writeConst(Chunk *chunk, Value value, int line);
 
 int getLine(LineStartArray *arr, int pos);
 
