@@ -7,9 +7,10 @@ void initChunk(Chunk *chunk) {
   chunk->capacity = 0;
   chunk->code = NULL;
   initValueArray(&chunk->constants);
+  initLineStartArray(&chunk->lines);
 }
 
-void writeChunk(Chunk *chunk, uint8_t byte) {
+void writeChunk(Chunk *chunk, uint8_t byte, int line, int offset) {
   if (chunk->capacity == chunk->length) {
     int newCap = GROW_CAPACITY(chunk->capacity);
     chunk->code = GROW_ARRAY(uint8_t, chunk->code, chunk->capacity, newCap);
@@ -17,11 +18,16 @@ void writeChunk(Chunk *chunk, uint8_t byte) {
   }
   chunk->code[chunk->length] = byte;
   chunk->length++;
+
+  if (line > chunk->lines.length) {
+    writeLineStartArray(&chunk->lines, offset);
+  }
 }
 
 void freeChunk(Chunk *chunk) {
   FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
   freeValueArray(&chunk->constants);
+  freeLineStartArray(&chunk->lines);
   initChunk(chunk);
 }
 
@@ -32,24 +38,34 @@ int addConst(Chunk *chunk, Value value) {
 
 IMPLEMENT_ARRAY_FUNCTIONS(int, LineStart)
 
-int getLine(LineStartArray *arr, int pos) {
+/**
+ * @brief Finds the line number for a given bytecode position.
+ *
+ * Performs binary search on the line start array to find which
+ * source line contains the bytecode at the given position.
+ *
+ * @return Line number (0-indexed), or -1 if not found
+ *
+ * @warning Returns -1 for invalid positions or empty arrays
+ */
+int getLine(LineStartArray *arr, int offset) {
   int start = 0;
   int end = arr->length - 1;
-  if (pos < 0 || arr->length == 0) {
+  if (offset < 0 || arr->length == 0) {
     return -1;
   }
 
   if (arr->length == 1) {
-    return (pos >= arr->values[0]) ? 0 : -1;
+    return (offset >= arr->values[0]) ? 1 : -1;
   }
 
   while (start <= end) {
     int middle = (start + end) / 2;
     int middle_el = arr->values[middle];
 
-    if (pos < middle_el) {
-      if (middle > 0 && pos >= arr->values[middle - 1]) {
-        return middle - 1;
+    if (offset < middle_el) {
+      if (middle > 0 && offset >= arr->values[middle - 1]) {
+        return middle;
       }
 
       end = middle - 1;
@@ -57,8 +73,8 @@ int getLine(LineStartArray *arr, int pos) {
     }
 
     else {
-      if (middle == arr->length - 1 || pos < arr->values[middle + 1]) {
-        return middle;
+      if (middle == arr->length - 1 || offset < arr->values[middle + 1]) {
+        return middle + 1;
       }
       start = middle + 1;
     }
