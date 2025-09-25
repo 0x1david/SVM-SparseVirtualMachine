@@ -3,4 +3,5 @@
 #include "std/bool.h"
 #include "std/def.h"
 #include <stdint.h>
+#include <stdio.h>
 #endif
