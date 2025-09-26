@@ -1,0 +1,21 @@
+#ifndef svm_vm_h
+#define svm_vm_h
+
+#include "chunk.h"
+
+typedef struct VM {
+  Chunk *chunk;
+  uint8_t *ip;
+} VM;
+
+typedef enum {
+  INTERPRET_OK,
+  INTERPRET_COMPILE_ERROR,
+  INTERPRET_RUNTIME_ERROR
+} InterpretResult;
+
+void initVM(VM *vm);
+void closeVM(VM *vm);
+InterpretResult interpret(VM *vm);
+
+#endif
