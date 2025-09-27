@@ -9,33 +9,32 @@
 #define FREE_ARRAY(type, ptr, oldSize)                                         \
   reallocate(ptr, sizeof(type) * oldSize, 0)
 
-// Macro to declare the array function prototypes for an existing struct
-#define DECLARE_ARRAY_FUNCTIONS(type, name)                                    \
-  void init##name##Array(name##Array *array);                                  \
-  void write##name##Array(name##Array *array, type value);                     \
-  void free##name##Array(name##Array *array);
+#define DECLARE_CONTAINER_FUNCTIONS(type, container_name)                      \
+  void init##container_name(container_name *container);                        \
+  void write##container_name(container_name *container, type value);           \
+  void free##container_name(container_name *container);
 
-// Macro to implement the array functions for an existing struct
-#define IMPLEMENT_ARRAY_FUNCTIONS(type, name)                                  \
-  void init##name##Array(name##Array *array) {                                 \
-    array->capacity = 0;                                                       \
-    array->length = 0;                                                         \
-    array->values = NULL;                                                      \
+// Macro to implement the container functions for an existing struct
+#define IMPLEMENT_CONTAINER_FUNCTIONS(type, container_name)                    \
+  void init##container_name(container_name *container) {                       \
+    container->capacity = 0;                                                   \
+    container->length = 0;                                                     \
+    container->values = NULL;                                                  \
   }                                                                            \
                                                                                \
-  void write##name##Array(name##Array *array, type value) {                    \
-    if (array->capacity == array->length) {                                    \
-      int new_capacity = GROW_CAPACITY(array->capacity);                       \
-      GROW_ARRAY(type, array->values, array->capacity, new_capacity);          \
-      array->capacity = new_capacity;                                          \
+  void write##container_name(container_name *container, type value) {          \
+    if (container->capacity == container->length) {                            \
+      int new_capacity = GROW_CAPACITY(container->capacity);                   \
+      GROW_ARRAY(type, container->values, container->capacity, new_capacity);  \
+      container->capacity = new_capacity;                                      \
     }                                                                          \
-    array->values[array->length] = value;                                      \
-    array->length++;                                                           \
+    container->values[container->length] = value;                              \
+    container->length++;                                                       \
   }                                                                            \
                                                                                \
-  void free##name##Array(name##Array *array) {                                 \
-    FREE_ARRAY(type, array->values, array->capacity);                          \
-    init##name##Array(array);                                                  \
+  void free##container_name(container_name *container) {                       \
+    FREE_ARRAY(type, container->values, container->capacity);                  \
+    init##container_name(container);                                           \
   }
 
 void *realloc(void *ptr, size_t size);

@@ -48,7 +48,7 @@ void writeConst(Chunk *chunk, Value value, int line) {
   }
 }
 
-IMPLEMENT_ARRAY_FUNCTIONS(int, LineStart)
+IMPLEMENT_CONTAINER_FUNCTIONS(int, LineStartArray)
 
 /**
  * @brief Finds the line number for a given bytecode position.

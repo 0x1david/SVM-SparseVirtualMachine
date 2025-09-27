@@ -5,7 +5,9 @@
 
 void initVM(VM *vm) {}
 void freeVM(VM *vm) {}
+
 InterpretResult interpret(VM *vm) {
+
 #define READ_BYTE() (*vm->ip++)
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
 #define READ_CONSTANT_LONG()                                                   \
@@ -16,9 +18,11 @@ InterpretResult interpret(VM *vm) {
   })
 
   for (;;) {
+
 #ifdef DEBUG_VM
     disassembleInstruction(vm->chunk, (int)(vm->ip - vm->chunk->code));
 #endif
+
     uint8_t instruction;
     switch (instruction = READ_BYTE()) {
     case OP_RETURN:

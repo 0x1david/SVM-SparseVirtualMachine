@@ -10,7 +10,7 @@ typedef struct {
   Value *values;
 } ValueArray;
 
-DECLARE_ARRAY_FUNCTIONS(Value, Value);
+DECLARE_CONTAINER_FUNCTIONS(Value, ValueArray);
 
 void printValue(Value value);
 

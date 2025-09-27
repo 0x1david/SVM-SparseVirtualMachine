@@ -13,7 +13,7 @@ typedef struct {
   int *values;
 } LineStartArray;
 
-DECLARE_ARRAY_FUNCTIONS(int, LineStart);
+DECLARE_CONTAINER_FUNCTIONS(int, LineStartArray);
 
 typedef struct {
   int length;
