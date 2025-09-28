@@ -5,7 +5,17 @@
 #include "memory.h"
 #include "value.h"
 
-typedef enum { OP_RETURN, OP_CONSTANT, OP_CONSTANT_LONG } OpCode;
+typedef enum {
+  OP_RETURN,
+  OP_NEGATE,
+  OP_SUBTRACT,
+  OP_ADD,
+  OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_MODULO,
+  OP_CONSTANT,
+  OP_CONSTANT_LONG
+} OpCode;
 
 typedef struct {
   int length;

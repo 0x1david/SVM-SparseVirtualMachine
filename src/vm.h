@@ -4,6 +4,20 @@
 #include "chunk.h"
 #include "stack.h"
 
+#define BINARY_OP(vm, op)                                                      \
+  do {                                                                         \
+    Value b = stackPop(vm->stack);                                             \
+    Value a = stackPop(vm->stack);                                             \
+    stackPush(vm->stack, a op b);                                              \
+  } while (false)
+
+#define BINARY_FUNC(vm, func)                                                  \
+  do {                                                                         \
+    Value b = stackPop(vm->stack);                                             \
+    Value a = stackPop(vm->stack);                                             \
+    stackPush(vm->stack, func(a, b));                                          \
+  } while (false)
+
 typedef struct VM {
   Chunk *chunk;
   Stack *stack;

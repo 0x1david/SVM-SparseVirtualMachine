@@ -1,8 +1,10 @@
 #include "vm.h"
+#include "chunk.h"
 #include "common.h"
 #include "debug.h"
 #include "stack.h"
 #include "value.h"
+#include <math.h>
 #include <stdlib.h>
 
 void initVM(VM *vm) {
@@ -51,6 +53,21 @@ InterpretResult interpret(VM *vm, Chunk *chunk) {
       stackPush(vm->stack, constant);
       break;
     }
+    case OP_NEGATE:
+      stackPush(vm->stack, -stackPop(vm->stack));
+      break;
+    case OP_ADD:
+      BINARY_OP(vm, +);
+      break;
+    case OP_SUBTRACT:
+      BINARY_OP(vm, -);
+      break;
+    case OP_MULTIPLY:
+      BINARY_OP(vm, *);
+      break;
+    case OP_DIVIDE:
+      BINARY_OP(vm, /);
+      break;
     }
   }
 #undef READ_BYTE
