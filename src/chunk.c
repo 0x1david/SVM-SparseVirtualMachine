@@ -63,22 +63,16 @@ IMPLEMENT_CONTAINER_FUNCTIONS(int, LineStartArray)
 int getLine(LineStartArray *arr, int offset) {
   int start = 0;
   int end = arr->length - 1;
-  if (offset < 0 || arr->length == 0) {
-    return -1;
-  }
+  if (offset < 0 || arr->length == 0) { return -1; }
 
-  if (arr->length == 1) {
-    return (offset >= arr->values[0]) ? 1 : -1;
-  }
+  if (arr->length == 1) { return (offset >= arr->values[0]) ? 1 : -1; }
 
   while (start <= end) {
     int middle = (start + end) / 2;
     int middle_el = arr->values[middle];
 
     if (offset < middle_el) {
-      if (middle > 0 && offset >= arr->values[middle - 1]) {
-        return middle;
-      }
+      if (middle > 0 && offset >= arr->values[middle - 1]) { return middle; }
 
       end = middle - 1;
       continue;

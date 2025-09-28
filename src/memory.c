@@ -7,8 +7,6 @@ void *reallocate(void *ptr, size_t oldSize, size_t newSize) {
     return NULL;
   }
   void *result = realloc(ptr, newSize);
-  if (result == NULL) {
-    exit(1);
-  }
+  if (result == NULL) { exit(1); }
   return result;
 }

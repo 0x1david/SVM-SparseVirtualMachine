@@ -40,35 +40,25 @@ InterpretResult interpret(VM *vm, const char *src) {
 
     uint8_t instruction;
     switch (instruction = READ_BYTE()) {
-    case OP_RETURN:
-      printValue(stackPop(vm->stack));
-      printf("\n");
-      return INTERPRET_OK;
-    case OP_CONSTANT: {
-      Value constant = READ_CONSTANT();
-      stackPush(vm->stack, constant);
-      break;
-    }
-    case OP_CONSTANT_LONG: {
-      Value constant = READ_CONSTANT_LONG();
-      stackPush(vm->stack, constant);
-      break;
-    }
-    case OP_NEGATE:
-      stackPush(vm->stack, -stackPop(vm->stack));
-      break;
-    case OP_ADD:
-      BINARY_OP(vm, +);
-      break;
-    case OP_SUBTRACT:
-      BINARY_OP(vm, -);
-      break;
-    case OP_MULTIPLY:
-      BINARY_OP(vm, *);
-      break;
-    case OP_DIVIDE:
-      BINARY_OP(vm, /);
-      break;
+      case OP_RETURN:
+        printValue(stackPop(vm->stack));
+        printf("\n");
+        return INTERPRET_OK;
+      case OP_CONSTANT: {
+        Value constant = READ_CONSTANT();
+        stackPush(vm->stack, constant);
+        break;
+      }
+      case OP_CONSTANT_LONG: {
+        Value constant = READ_CONSTANT_LONG();
+        stackPush(vm->stack, constant);
+        break;
+      }
+      case OP_NEGATE: stackPush(vm->stack, -stackPop(vm->stack)); break;
+      case OP_ADD: BINARY_OP(vm, +); break;
+      case OP_SUBTRACT: BINARY_OP(vm, -); break;
+      case OP_MULTIPLY: BINARY_OP(vm, *); break;
+      case OP_DIVIDE: BINARY_OP(vm, /); break;
     }
   }
 #undef READ_BYTE
