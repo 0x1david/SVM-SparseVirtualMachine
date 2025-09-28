@@ -12,7 +12,7 @@ static void repl(VM *vm) {
       printf("\n");
       break;
     }
-    interpret(&vm, line);
+    interpret(vm, line);
   }
 }
 
@@ -50,14 +50,9 @@ static void runFile(VM *vm, const char *path) {
   free(src);
 
   switch (res) {
-  case INTERPRET_COMPILE_ERROR:
-    exit(65);
-    break;
-  case INTERPRET_RUNTIME_ERROR:
-    exit(70);
-    break;
-  case INTERPRET_OK:
-    break;
+    case INTERPRET_COMPILE_ERROR: exit(65); break;
+    case INTERPRET_RUNTIME_ERROR: exit(70); break;
+    case INTERPRET_OK: break;
   }
 }
 
@@ -65,14 +60,9 @@ int main(int argc, const char *argv[]) {
   VM vm;
   initVM(&vm);
   switch (argc) {
-  case 1:
-    repl(&vm);
-    break;
-  case 2:
-    runFile(&vm, argv[1]);
-    break;
-  default:
-    fprintf(stderr, "Usage: clox [path]\n");
+    case 1: repl(&vm); break;
+    case 2: runFile(&vm, argv[1]); break;
+    default: fprintf(stderr, "Usage: svm [path]\n");
   }
   closeVM(&vm);
   return 0;

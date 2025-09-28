@@ -1,6 +1,7 @@
 #include "vm.h"
 #include "chunk.h"
 #include "common.h"
+#include "compiler.h"
 #include "debug.h"
 #include "stack.h"
 #include "value.h"
@@ -13,9 +14,9 @@ void initVM(VM *vm) {
 }
 void closeVM(VM *vm) {}
 
-InterpretResult interpret(VM *vm, Chunk *chunk) {
-  vm->chunk = chunk;
-  vm->ip = chunk->code;
+InterpretResult interpret(VM *vm, const char *src) {
+  compile(src);
+  return INTERPRET_OK;
 
 #define READ_BYTE() (*vm->ip++)
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])

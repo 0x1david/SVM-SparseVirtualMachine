@@ -32,6 +32,6 @@ typedef enum {
 
 void initVM(VM *vm);
 void closeVM(VM *vm);
-InterpretResult interpret(VM *vm, Chunk *chunk);
+InterpretResult interpret(VM *vm, const char *src);
 
 #endif
