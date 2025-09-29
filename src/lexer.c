@@ -27,9 +27,16 @@ void initLexer(Lexer *l, const char *src) {
   l->start = src;
   l->current = src;
   l->keywords = trieNew();
+  l->line = 1;
   addKeywords(l->keywords);
 }
+
 void freeLexer(Lexer *l) { trieFree(l->keywords); }
+
+static char advance(Lexer *l) {
+  l->current++;
+  return l->current[-1];
+}
 
 static bool isAtEnd(Lexer *l) { return *l->current == '\0'; };
 
@@ -59,13 +66,39 @@ static bool matches(Lexer *l, char c) {
   return true;
 };
 
+static char peek(Lexer *l) { return *l->current; }
+
+static void skipWhitespace(Lexer *l) {
+  for (;;) {
+    char c = peek(l);
+    switch (c) {
+      case ' ':
+      case '\r':
+      case '\t': advance(l); break;
+      case '/':
+        if (l->current[1] == '/') {
+          while (peek(l) != '\n' && !isAtEnd(l)) {
+            advance(l);
+          }
+        } else {
+          return;
+        }
+        break;
+      default: return;
+    }
+  }
+}
+
 Tok lexTok(Lexer *l) {
+  skipWhitespace(l);
   l->start = l->current;
 
   if (isAtEnd(l)) return makeTok(l, TOK_EOF);
 
-  switch (*l->current) {
-    // Single-char
+  char c = advance(l);
+
+  switch (c) {
+    case '/': return makeTok(l, TOK_SLASH);
     case '(': return makeTok(l, TOK_LEFT_PAREN);
     case ')': return makeTok(l, TOK_RIGHT_PAREN);
     case '{': return makeTok(l, TOK_LEFT_BRACE);
@@ -75,15 +108,13 @@ Tok lexTok(Lexer *l) {
     case '-': return makeTok(l, TOK_MINUS);
     case '+': return makeTok(l, TOK_PLUS);
     case ';': return makeTok(l, TOK_SEMICOLON);
-    case '/': return makeTok(l, TOK_SLASH);
     case '*': return makeTok(l, TOK_STAR);
     case '!': return makeTok(l, matches(l, '=') ? TOK_BANG_EQUAL : TOK_BANG);
     case '=': return makeTok(l, matches(l, '=') ? TOK_EQUAL_EQUAL : TOK_EQUAL);
     case '<': return makeTok(l, matches(l, '=') ? TOK_LESS_EQUAL : TOK_LESS);
     case '>':
       return makeTok(l, matches(l, '=') ? TOK_GREATER_EQUAL : TOK_GREATER);
-      //   TOK_STRING,
-      //
+
     case '"':
       while (*l->current != '"') {
         if (isAtEnd(l)) { return errorTok(l, "Unexpected stream end."); }
@@ -104,13 +135,14 @@ Tok lexTok(Lexer *l) {
       bool seen_dot = false;
       while (*l->current == '.' || isdigit(*l->current)) {
         if (seen_dot && *l->current == '.') {
-          return errorTok(l, "Invalid number literal.");
+          return errorTok(l, "Invalid number literal");
         }
         seen_dot = *l->current == '.' || seen_dot;
         l->current++;
       }
-      return makeTok(l, TOK_NUMBER);
+      return l->current[-1] != '.' ? makeTok(l, TOK_NUMBER)
+                                   : errorTok(l, "Invalid number literal");
   }
 
-  return errorTok(l, "Unexpected character.");
+  return errorTok(l, "Unexpected character");
 }
