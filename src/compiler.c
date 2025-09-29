@@ -1,16 +1,11 @@
 #include "lexer.h"
 
 void compile(const char *src) {
-  initLexer(src);
+  Lexer lexer;
+  initLexer(&lexer, src);
 
   for (;;) {
-    Tok tok = lexTok();
-    if (tok.line != line) {
-      printf("%4d ", tok.line);
-      line = tok.line;
-    } else {
-      printf("  | ");
-    }
+    Tok tok = lexTok(&lexer);
     printf("%2d '%.*s'\n", tok.type, tok.length, tok.start);
   }
 }

@@ -1,6 +1,8 @@
 #ifndef svm_memory_h
 #define svm_memory_h
 #include "common.h"
+#include "token.h"
+#include <stdbool.h>
 
 #define GROW_CAPACITY(c) ((c) == 0 ? 8 : ((c) * 2))
 #define GROW_ARRAY(type, ptr, oldSize, newSize)                                \
@@ -39,5 +41,16 @@
 
 void *realloc(void *ptr, size_t size);
 void *reallocate(void *ptr, size_t oldSize, size_t newSize);
+
+typedef struct Trie {
+  struct Trie *children[26];
+  bool is_leaf_node;
+  TokType token_type;
+} Trie;
+
+Trie *trieNew();
+void trieFree(Trie *t);
+void trieInsert(Trie *t, const char *s, TokType tt);
+TokType trieFind(Trie *t, const char *s, int length);
 
 #endif
