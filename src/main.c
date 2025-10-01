@@ -1,3 +1,4 @@
+#include "compiler.h"
 #include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +11,7 @@ static void repl(VM *vm) {
       printf("\n");
       break;
     }
-    interpret(vm, line);
+    compile(line);
   }
 }
 

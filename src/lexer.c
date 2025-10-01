@@ -74,6 +74,7 @@ static void skipWhitespace(Lexer *l) {
     switch (c) {
       case ' ':
       case '\r':
+      case '\n':
       case '\t': advance(l); break;
       case '/':
         if (l->current[1] == '/') {
@@ -120,6 +121,7 @@ Tok lexTok(Lexer *l) {
         if (isAtEnd(l)) { return errorTok(l, "Unexpected stream end."); }
         l->current++;
       }
+      advance(l);
       return makeTok(l, TOK_STRING);
 
     case 'a' ... 'z':
