@@ -31,12 +31,12 @@ void freeChunk(Chunk *chunk) {
   initChunk(chunk);
 }
 
-int addConst(Chunk *chunk, Value value) {
+int addConstant(Chunk *chunk, Value value) {
   writeValueArray(&chunk->constants, value);
   return chunk->constants.length - 1;
 }
 void writeConst(Chunk *chunk, Value value, int line) {
-  int constantIndex = addConst(chunk, value);
+  int constantIndex = addConstant(chunk, value);
 
   if (constantIndex <= 255) {
     writeChunk(chunk, OP_CONSTANT, line, 0);
