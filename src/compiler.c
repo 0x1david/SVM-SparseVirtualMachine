@@ -90,12 +90,12 @@ static void parsePrecedence(Parser *parser, Lexer *lexer,
     return;
   }
 
-  prefixRule();
+  prefixRule(parser, lexer);
 
   while (precedence <= getRule(parser->current.type)->precedence) {
     advance(parser, lexer);
     ParseFn infixRule = getRule(parser->previous.type)->infix;
-    infixRule();
+    infixRule(parser, lexer);
   }
 }
 
@@ -141,12 +141,9 @@ static void binary(Parser *parser, Lexer *lexer) {
 
 bool compile(const char *src, Chunk *chunk) {
   Lexer lexer;
-  Parser parser;
+  Parser parser = {0};
   initLexer(&lexer, src);
   compilingChunk = chunk;
-
-  parser.hadError = false;
-  parser.isPanicing = false;
 
   advance(&parser, &lexer);
   expression(&parser, &lexer);

@@ -13,7 +13,7 @@ void initChunk(Chunk *chunk) {
 void writeChunk(Chunk *chunk, uint8_t byte, int line, int offset) {
   if (chunk->capacity == chunk->length) {
     int newCap = GROW_CAPACITY(chunk->capacity);
-    chunk->code = GROW_ARRAY(uint8_t, chunk->code, chunk->capacity, newCap);
+    GROW_ARRAY(uint8_t, chunk->code, chunk->capacity, newCap);
     chunk->capacity = newCap;
   }
   chunk->code[chunk->length] = byte;

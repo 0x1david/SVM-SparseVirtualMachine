@@ -1,3 +1,4 @@
+#include "chunk.h"
 #include "compiler.h"
 #include "vm.h"
 #include <stdio.h>
@@ -11,7 +12,7 @@ static void repl(VM *vm) {
       printf("\n");
       break;
     }
-    compile(line);
+    interpret(vm, line);
   }
 }
 
