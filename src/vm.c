@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "stack.h"
 #include "value.h"
+#include <stdarg.h>
 #include <stdlib.h>
 
 void initVM(VM *vm) {
@@ -12,6 +13,23 @@ void initVM(VM *vm) {
   stackInit(vm->stack);
 }
 void closeVM(VM *vm) {}
+
+static Value peek(VM *vm, int distance) {
+  return vm->stack->data[-1 - distance];
+}
+
+static void runtimeError(VM *vm, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+
+  size_t instruction = vm->ip - vm->chunk->code - 1;
+  int line = vm->chunk->lines.values[instruction];
+  fprintf(stderr, "[line %d] in script\n", line);
+  resetStack();
+}
 
 InterpretResult run(VM *vm) {
 #define READ_BYTE() (*vm->ip++)
@@ -51,7 +69,13 @@ InterpretResult run(VM *vm) {
         stackPush(vm->stack, constant);
         break;
       }
-      case OP_NEGATE: stackPush(vm->stack, -stackPop(vm->stack)); break;
+      case OP_NEGATE:
+        if (!IS_NUMBER(peek(0))) {
+          runtimeError("Operand must be a number.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        stackPush(vm->stack, NUMBER_VAL(-AS_NUMBER(stackPop(vm->stack))));
+        break;
       case OP_ADD: BINARY_OP(vm, +); break;
       case OP_SUBTRACT: BINARY_OP(vm, -); break;
       case OP_MULTIPLY: BINARY_OP(vm, *); break;

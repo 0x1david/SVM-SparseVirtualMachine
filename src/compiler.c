@@ -111,7 +111,7 @@ static void emitConstant(Parser *parser, Value value) {
 }
 static void number(Parser *parser, Lexer *lexer) {
   double value = strtod(parser->previous.start, NULL);
-  emitConstant(parser, value);
+  emitConstant(parser, NUMBER_VAL(value));
 }
 static void unary(Parser *parser, Lexer *lexer) {
   TokType opType = parser->previous.type;
