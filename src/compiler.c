@@ -135,6 +135,16 @@ static void binary(Parser *parser, Lexer *lexer) {
     case TOK_MINUS: emitByte(parser, OP_SUBTRACT); break;
     case TOK_STAR: emitByte(parser, OP_MULTIPLY); break;
     case TOK_SLASH: emitByte(parser, OP_DIVIDE); break;
+    case TOK_BANG: emitByte(parser, OP_NOT); break;
+    default: return;
+  }
+}
+
+static void literal(Parser *parser) {
+  switch (parser->previous.type) {
+    case TOK_FALSE: emitByte(parser, OP_FALSE); break;
+    case TOK_NIL: emitByte(parser, OP_NIL); break;
+    case TOK_TRUE: emitByte(parser, OP_TRUE); break;
     default: return;
   }
 }
@@ -162,7 +172,7 @@ static ParseRule rules[] = {
     [TOK_MINUS] = {unary, binary, PREC_TERM},
     [TOK_PLUS] = {NULL, binary, PREC_TERM},
     [TOK_SEMICOLON] = {NULL, NULL, PREC_NONE},
-    [TOK_BANG] = {NULL, NULL, PREC_NONE},
+    [TOK_BANG] = {unary, NULL, PREC_NONE},
     [TOK_BANG_EQUAL] = {NULL, NULL, PREC_NONE},
     [TOK_EQUAL] = {NULL, NULL, PREC_NONE},
     [TOK_EQUAL_EQUAL] = {NULL, NULL, PREC_NONE},
@@ -175,17 +185,17 @@ static ParseRule rules[] = {
     [TOK_AND] = {NULL, NULL, PREC_NONE},
     [TOK_CLASS] = {NULL, NULL, PREC_NONE},
     [TOK_ELSE] = {NULL, NULL, PREC_NONE},
-    [TOK_FALSE] = {NULL, NULL, PREC_NONE},
+    [TOK_FALSE] = {literal, NULL, PREC_NONE},
     [TOK_FOR] = {NULL, NULL, PREC_NONE},
     [TOK_FUN] = {NULL, NULL, PREC_NONE},
     [TOK_IF] = {NULL, NULL, PREC_NONE},
-    [TOK_NIL] = {NULL, NULL, PREC_NONE},
+    [TOK_NIL] = {literal, NULL, PREC_NONE},
     [TOK_OR] = {NULL, NULL, PREC_NONE},
     [TOK_PRINT] = {NULL, NULL, PREC_NONE},
     [TOK_RETURN] = {NULL, NULL, PREC_NONE},
     [TOK_SUPER] = {NULL, NULL, PREC_NONE},
     [TOK_THIS] = {NULL, NULL, PREC_NONE},
-    [TOK_TRUE] = {NULL, NULL, PREC_NONE},
+    [TOK_TRUE] = {literal, NULL, PREC_NONE},
     [TOK_VAR] = {NULL, NULL, PREC_NONE},
     [TOK_WHILE] = {NULL, NULL, PREC_NONE},
     [TOK_ERROR] = {NULL, NULL, PREC_NONE},

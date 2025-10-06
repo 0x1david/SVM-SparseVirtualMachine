@@ -18,6 +18,10 @@ static Value peek(VM *vm, int distance) {
   return vm->stack->data[-1 - distance];
 }
 
+static bool isFalsey(Value value) {
+  return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static void runtimeError(VM *vm, const char *format, ...) {
   va_list args;
   va_start(args, format);
@@ -70,16 +74,19 @@ InterpretResult run(VM *vm) {
         break;
       }
       case OP_NEGATE:
-        if (!IS_NUMBER(peek(0))) {
-          runtimeError("Operand must be a number.");
+        if (!IS_NUMBER(peek(vm, 0))) {
+          runtimeError(vm, "Operand must be a number.");
           return INTERPRET_RUNTIME_ERROR;
         }
         stackPush(vm->stack, NUMBER_VAL(-AS_NUMBER(stackPop(vm->stack))));
         break;
-      case OP_ADD: BINARY_OP(vm, +); break;
-      case OP_SUBTRACT: BINARY_OP(vm, -); break;
-      case OP_MULTIPLY: BINARY_OP(vm, *); break;
-      case OP_DIVIDE: BINARY_OP(vm, /); break;
+      case OP_ADD: BINARY_OP(vm, NUMBER_VAL, +); break;
+      case OP_SUBTRACT: BINARY_OP(vm, NUMBER_VAL, -); break;
+      case OP_MULTIPLY: BINARY_OP(vm, NUMBER_VAL, *); break;
+      case OP_DIVIDE: BINARY_OP(vm, NUMBER_VAL, /); break;
+      case OP_NOT:
+        stackPush(vm->stack, BOOL_VAL(isFalsey(stackPop(vm->stack))));
+        break;
     }
   }
 #undef READ_BYTE

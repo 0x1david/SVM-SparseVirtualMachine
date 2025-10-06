@@ -4,11 +4,16 @@
 #include "chunk.h"
 #include "stack.h"
 
-#define BINARY_OP(vm, op)                                                      \
+#define BINARY_OP(vm, valueType, op)                                           \
   do {                                                                         \
-    Value b = stackPop(vm->stack);                                             \
-    Value a = stackPop(vm->stack);                                             \
-    stackPush(vm->stack, a op b);                                              \
+    if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) {                  \
+      runtimeError(vm, "Operands must be numbers.");                           \
+      return INTERPRET_RUNTIME_ERROR;                                          \
+    }                                                                          \
+                                                                               \
+    double b = AS_NUMBER(stackPop(vm->stack));                                 \
+    double a = AS_NUMBER(stackPop(vm->stack));                                 \
+    stackPush(vm->stack, valueType(a op b));                                   \
   } while (false)
 
 #define BINARY_FUNC(vm, func)                                                  \
