@@ -10,7 +10,10 @@ void stackInit(Stack *s) {
   s->capacity = 0;
 }
 
-void stackFree(Stack *s) { free(s->data); }
+void stackFree(Stack *s) {
+  free(s->data);
+  stackInit(s);
+}
 
 void stackPush(Stack *s, Value v) {
   if (s->top + 1 >= s->capacity) {

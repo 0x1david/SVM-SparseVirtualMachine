@@ -18,6 +18,16 @@ static Value peek(VM *vm, int distance) {
   return vm->stack->data[-1 - distance];
 }
 
+bool valuesEqual(Value v1, Value v2) {
+  if (v1.type != v2.type) { return false; }
+  switch (v1.type) {
+    case VAL_BOOL: return AS_BOOL(v1) == AS_BOOL(v2);
+    case VAL_NUMBER: return AS_NUMBER(v1) == AS_NUMBER(v2);
+    case VAL_NIL: return true;
+    default: return false;
+  }
+}
+
 static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
@@ -32,7 +42,7 @@ static void runtimeError(VM *vm, const char *format, ...) {
   size_t instruction = vm->ip - vm->chunk->code - 1;
   int line = vm->chunk->lines.values[instruction];
   fprintf(stderr, "[line %d] in script\n", line);
-  resetStack();
+  stackFree(vm->stack);
 }
 
 InterpretResult run(VM *vm) {
@@ -84,15 +94,22 @@ InterpretResult run(VM *vm) {
       case OP_SUBTRACT: BINARY_OP(vm, NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(vm, NUMBER_VAL, *); break;
       case OP_DIVIDE: BINARY_OP(vm, NUMBER_VAL, /); break;
+      case OP_EQUAL: {
+        Value b = stackPop(vm->stack);
+        Value a = stackPop(vm->stack);
+        stackPush(vm->stack, BOOL_VAL(valuesEqual(a, b)));
+      }; break;
+      case OP_GREATER: BINARY_OP(vm, NUMBER_VAL, >); break;
+      case OP_LESS: BINARY_OP(vm, NUMBER_VAL, <); break;
       case OP_NOT:
         stackPush(vm->stack, BOOL_VAL(isFalsey(stackPop(vm->stack))));
         break;
     }
   }
+}
 #undef READ_BYTE
 #undef READ_CONSTANT
 #undef READ_CONSTANT_LONG
-}
 
 InterpretResult interpret(VM *vm, const char *src) {
   Chunk chunk;
