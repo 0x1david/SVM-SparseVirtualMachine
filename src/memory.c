@@ -1,4 +1,6 @@
 #include "memory.h"
+#include "object.h"
+#include "vm.h"
 #include <ctype.h>
 #include <stdlib.h>
 
@@ -41,4 +43,24 @@ TokType trieFind(Trie *t, const char *s, int length) {
   int idx = *s - 'a';
   if (t->children[idx] == NULL) { return TOK_IDENTIFIER; }
   return trieFind(t->children[idx], s + 1, length - 1);
+}
+
+static void freeObject(Obj *object) {
+  switch (object->type) {
+    case OBJ_STRING: {
+      ObjString *string = (ObjString *)object;
+      FREE_ARRAY(char, string->chars, string->length + 1);
+      FREE(ObjString, object);
+      break;
+    }
+  }
+}
+
+void freeObjects(VM *vm) {
+  Obj *object = vm->objects;
+  while (object != NULL) {
+    Obj *next = object->next;
+    freeObject(object);
+    object = next;
+  }
 }

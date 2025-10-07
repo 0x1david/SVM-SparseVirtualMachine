@@ -14,6 +14,8 @@
 #define FREE_ARRAY(type, ptr, oldSize)                                         \
   reallocate(ptr, sizeof(type) * oldSize, 0)
 
+#define FREE(type, ptr) reallocate(ptr, sizeof(type), 0)
+
 #define DECLARE_CONTAINER_FUNCTIONS(type, container_name)                      \
   void init##container_name(container_name *container);                        \
   void write##container_name(container_name *container, type value);           \
@@ -55,5 +57,6 @@ Trie *trieNew();
 void trieFree(Trie *t);
 void trieInsert(Trie *t, const char *s, TokType tt);
 TokType trieFind(Trie *t, const char *s, int length);
+void freeObjects();
 
 #endif

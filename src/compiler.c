@@ -82,7 +82,7 @@ static void endCompiler(Parser *parser) {
 
 static ParseRule *getRule(TokType type) { return &rules[type]; }
 
-static void parsePrecedence(Parser *parser, Lexer *lexer,
+static void parsePrecedence(VM *vm, Parser *parser, Lexer *lexer,
                             Precedence precedence) {
   advance(parser, lexer);
   ParseFn prefixRule = getRule(parser->previous.type)->prefix;
@@ -91,33 +91,33 @@ static void parsePrecedence(Parser *parser, Lexer *lexer,
     return;
   }
 
-  prefixRule(parser, lexer);
+  prefixRule(vm, parser, lexer);
 
   while (precedence <= getRule(parser->current.type)->precedence) {
     advance(parser, lexer);
     ParseFn infixRule = getRule(parser->previous.type)->infix;
-    infixRule(parser, lexer);
+    infixRule(vm, parser, lexer);
   }
 }
 
-static void expression(Parser *parser, Lexer *lexer) {
-  parsePrecedence(parser, lexer, PREC_ASSIGNMENT);
+static void expression(VM *vm, Parser *parser, Lexer *lexer) {
+  parsePrecedence(vm, parser, lexer, PREC_ASSIGNMENT);
 }
-static void grouping(Parser *parser, Lexer *lexer) {
-  expression(parser, lexer);
+static void grouping(VM *vm, Parser *parser, Lexer *lexer) {
+  expression(vm, parser, lexer);
   consume(parser, lexer, TOK_RIGHT_PAREN, "Expect `)` after expression.");
 }
 static void emitConstant(Parser *parser, Value value) {
   emitBytes(parser, OP_CONSTANT, makeConstant(parser, value));
 }
-static void number(Parser *parser, Lexer *lexer) {
+static void number(VM *vm, Parser *parser, Lexer *lexer) {
   double value = strtod(parser->previous.start, NULL);
   emitConstant(parser, NUMBER_VAL(value));
 }
-static void unary(Parser *parser, Lexer *lexer) {
+static void unary(VM *vm, Parser *parser, Lexer *lexer) {
   TokType opType = parser->previous.type;
 
-  parsePrecedence(parser, lexer, PREC_UNARY);
+  parsePrecedence(vm, parser, lexer, PREC_UNARY);
 
   switch (opType) {
     case TOK_MINUS: emitByte(parser, OP_NEGATE); break;
@@ -126,10 +126,10 @@ static void unary(Parser *parser, Lexer *lexer) {
   }
 }
 
-static void binary(Parser *parser, Lexer *lexer) {
+static void binary(VM *vm, Parser *parser, Lexer *lexer) {
   TokType opType = parser->previous.type;
   ParseRule *rule = getRule(opType);
-  parsePrecedence(parser, lexer, (Precedence)rule->precedence + 1);
+  parsePrecedence(vm, parser, lexer, (Precedence)rule->precedence + 1);
 
   switch (opType) {
     case TOK_PLUS: emitByte(parser, OP_ADD); break;
@@ -147,7 +147,7 @@ static void binary(Parser *parser, Lexer *lexer) {
   }
 }
 
-static void literal(Parser *parser, Lexer *lexer) {
+static void literal(VM *vm, Parser *parser, Lexer *lexer) {
   switch (parser->previous.type) {
     case TOK_FALSE: emitByte(parser, OP_FALSE); break;
     case TOK_NIL: emitByte(parser, OP_NIL); break;
@@ -156,19 +156,19 @@ static void literal(Parser *parser, Lexer *lexer) {
   }
 }
 
-static void string(Parser *parser, Lexer *lexer) {
-  emitConstant(parser, OBJ_VAL(copyString(parser->previous.start + 1,
+static void string(VM *vm, Parser *parser, Lexer *lexer) {
+  emitConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start + 1,
                                           parser->previous.length - 2)));
 };
 
-bool compile(const char *src, Chunk *chunk) {
+bool compile(VM *vm, const char *src, Chunk *chunk) {
   Lexer lexer;
   Parser parser = {0};
   initLexer(&lexer, src);
   compilingChunk = chunk;
 
   advance(&parser, &lexer);
-  expression(&parser, &lexer);
+  expression(vm, &parser, &lexer);
   consume(&parser, &lexer, TOK_EOF, "Expect end of expression");
   endCompiler(&parser);
   return !parser.hadError;

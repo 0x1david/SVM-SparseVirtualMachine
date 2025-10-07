@@ -27,6 +27,7 @@ typedef struct VM {
   Chunk *chunk;
   Stack *stack;
   uint8_t *ip;
+  Obj *objects;
 } VM;
 
 typedef enum {

@@ -3,7 +3,8 @@
 
 #include "chunk.h"
 #include "lexer.h"
-bool compile(const char *src, Chunk *chunk);
+#include "vm.h"
+bool compile(VM *vm, const char *src, Chunk *chunk);
 
 typedef struct {
   Tok current;
@@ -26,7 +27,7 @@ typedef enum {
   PREC_PRIMARY,
 } Precedence;
 
-typedef void (*ParseFn)(Parser *, Lexer *);
+typedef void (*ParseFn)(VM *, Parser *, Lexer *);
 
 typedef struct {
   ParseFn prefix;

@@ -13,8 +13,9 @@
 void initVM(VM *vm) {
   vm->stack = malloc(sizeof(Stack));
   stackInit(vm->stack);
+  vm->objects = NULL;
 }
-void closeVM(VM *vm) {}
+void closeVM(VM *vm) { freeObjects(); }
 
 static Value peek(VM *vm, int distance) {
   return vm->stack->data[vm->stack->top - distance];
@@ -32,7 +33,7 @@ static void concatenate(VM *vm) {
   memcpy(chars, a->chars, a->length);
   memcpy(chars + a->length, b->chars, b->length);
   chars[length] = '\0';
-  ObjString *result = takeString(chars, length);
+  ObjString *result = takeString(vm, chars, length);
   stackPush(vm->stack, OBJ_VAL(result));
 }
 
@@ -131,7 +132,7 @@ InterpretResult interpret(VM *vm, const char *src) {
   Chunk chunk;
   initChunk(&chunk);
 
-  if (!compile(src, &chunk)) {
+  if (!compile(vm, src, &chunk)) {
     freeChunk(&chunk);
     return INTERPRET_COMPILE_ERROR;
   }
