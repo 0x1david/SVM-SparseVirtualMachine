@@ -4,6 +4,9 @@
 #include "token.h"
 #include <stdbool.h>
 
+#define ALLOCATE(type, count)                                                  \
+  (type *)reallocate(NULL, 0, sizeof(type) * (count))
+
 #define GROW_CAPACITY(c) ((c) == 0 ? 8 : ((c) * 2))
 #define GROW_ARRAY(type, ptr, oldSize, newSize)                                \
   ptr = (type *)reallocate(ptr, sizeof(type) * oldSize, sizeof(type) * newSize)

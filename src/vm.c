@@ -3,10 +3,12 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
+#include "object.h"
 #include "stack.h"
 #include "value.h"
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 
 void initVM(VM *vm) {
   vm->stack = malloc(sizeof(Stack));
@@ -18,18 +20,20 @@ static Value peek(VM *vm, int distance) {
   return vm->stack->data[vm->stack->top - distance];
 }
 
-bool valuesEqual(Value v1, Value v2) {
-  if (v1.type != v2.type) { return false; }
-  switch (v1.type) {
-    case VAL_BOOL: return AS_BOOL(v1) == AS_BOOL(v2);
-    case VAL_NUMBER: return AS_NUMBER(v1) == AS_NUMBER(v2);
-    case VAL_NIL: return true;
-    default: return false;
-  }
-}
-
 static bool isFalsey(Value value) {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static void concatenate(VM *vm) {
+  ObjString *b = AS_STRING(stackPop(vm->stack));
+  ObjString *a = AS_STRING(stackPop(vm->stack));
+  int length = a->length + b->length;
+  char *chars = ALLOCATE(char, length + 1);
+  memcpy(chars, a->chars, a->length);
+  memcpy(chars + a->length, b->chars, b->length);
+  chars[length] = '\0';
+  ObjString *result = takeString(chars, length);
+  stackPush(vm->stack, OBJ_VAL(result));
 }
 
 static void runtimeError(VM *vm, const char *format, ...) {
@@ -90,7 +94,6 @@ InterpretResult run(VM *vm) {
         }
         stackPush(vm->stack, NUMBER_VAL(-AS_NUMBER(stackPop(vm->stack))));
         break;
-      case OP_ADD: BINARY_OP(vm, NUMBER_VAL, +); break;
       case OP_SUBTRACT: BINARY_OP(vm, NUMBER_VAL, -); break;
       case OP_MULTIPLY: BINARY_OP(vm, NUMBER_VAL, *); break;
       case OP_DIVIDE: BINARY_OP(vm, NUMBER_VAL, /); break;
@@ -105,6 +108,18 @@ InterpretResult run(VM *vm) {
         stackPush(vm->stack, BOOL_VAL(isFalsey(stackPop(vm->stack))));
         break;
       case OP_NIL: stackPush(vm->stack, NIL_VAL()); break;
+      case OP_ADD: {
+        if (IS_STRING(peek(vm, 0)) && IS_STRING(peek(vm, 1))) {
+          concatenate(vm);
+        } else if (IS_NUMBER(peek(vm, 0)) && IS_NUMBER(peek(vm, 1))) {
+          double b = AS_NUMBER(stackPop(vm->stack));
+          double a = AS_NUMBER(stackPop(vm->stack));
+          stackPush(vm->stack, NUMBER_VAL(a + b));
+        } else {
+          runtimeError(vm, "Operands must be two numbers or two strings.");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+      }
     }
   }
 }

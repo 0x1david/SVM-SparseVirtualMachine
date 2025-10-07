@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "lexer.h"
 #include "memory.h"
+#include "object.h"
 #include <stdlib.h>
 
 static ParseRule rules[TOK_EOF + 1];
@@ -155,6 +156,11 @@ static void literal(Parser *parser, Lexer *lexer) {
   }
 }
 
+static void string(Parser *parser, Lexer *lexer) {
+  emitConstant(parser, OBJ_VAL(copyString(parser->previous.start + 1,
+                                          parser->previous.length - 2)));
+};
+
 bool compile(const char *src, Chunk *chunk) {
   Lexer lexer;
   Parser parser = {0};
@@ -208,4 +214,4 @@ static ParseRule rules[] = {
     [TOK_WHILE] = {NULL, NULL, PREC_NONE},
     [TOK_ERROR] = {NULL, NULL, PREC_NONE},
     [TOK_EOF] = {NULL, NULL, PREC_NONE},
-};
+    [TOK_STRING] = {string, NULL, PREC_NONE}};
