@@ -116,11 +116,11 @@ static void number(Parser *parser, Lexer *lexer) {
 static void unary(Parser *parser, Lexer *lexer) {
   TokType opType = parser->previous.type;
 
-  expression(parser, lexer);
   parsePrecedence(parser, lexer, PREC_UNARY);
 
   switch (opType) {
     case TOK_MINUS: emitByte(parser, OP_NEGATE); break;
+    case TOK_BANG: emitByte(parser, OP_NOT); break;
     default: return;
   }
 }
@@ -174,6 +174,8 @@ static ParseRule rules[] = {
     [TOK_LEFT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOK_RIGHT_BRACE] = {NULL, NULL, PREC_NONE},
     [TOK_COMMA] = {NULL, NULL, PREC_NONE},
+    [TOK_STAR] = {NULL, binary, PREC_FACTOR},
+    [TOK_SLASH] = {NULL, binary, PREC_FACTOR},
     [TOK_DOT] = {NULL, NULL, PREC_NONE},
     [TOK_MINUS] = {unary, binary, PREC_TERM},
     [TOK_PLUS] = {NULL, binary, PREC_TERM},

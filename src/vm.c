@@ -15,7 +15,7 @@ void initVM(VM *vm) {
 void closeVM(VM *vm) {}
 
 static Value peek(VM *vm, int distance) {
-  return vm->stack->data[-1 - distance];
+  return vm->stack->data[vm->stack->top - distance];
 }
 
 bool valuesEqual(Value v1, Value v2) {
@@ -104,6 +104,7 @@ InterpretResult run(VM *vm) {
       case OP_NOT:
         stackPush(vm->stack, BOOL_VAL(isFalsey(stackPop(vm->stack))));
         break;
+      case OP_NIL: stackPush(vm->stack, NIL_VAL()); break;
     }
   }
 }
