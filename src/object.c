@@ -1,4 +1,5 @@
 #include "object.h"
+#include "map.h"
 #include "value.h"
 #include "vm.h"
 #include <string.h>
@@ -17,6 +18,7 @@ static ObjString *allocateString(VM *vm, char *chars, int length) {
   ObjString *string = ALLOCATE_OBJ(vm, ObjString, OBJ_STRING);
   string->length = length;
   string->chars = chars;
+  string->hash = hashString(chars, length);
   return string;
 }
 
