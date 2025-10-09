@@ -1,4 +1,3 @@
-#include "object.h"
 #include "map.h"
 #include "value.h"
 #include "vm.h"
