@@ -2,6 +2,7 @@
 #define svm_vm_h
 
 #include "chunk.h"
+#include "map.h"
 #include "stack.h"
 
 #define BINARY_OP(vm, valueType, op)                                           \
@@ -27,6 +28,7 @@ typedef struct VM {
   Chunk *chunk;
   Stack *stack;
   uint8_t *ip;
+  hashMap strings;
   Obj *objects;
 } VM;
 

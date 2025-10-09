@@ -3,6 +3,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "debug.h"
+#include "map.h"
 #include "object.h"
 #include "stack.h"
 #include "value.h"
@@ -14,8 +15,12 @@ void initVM(VM *vm) {
   vm->stack = malloc(sizeof(Stack));
   stackInit(vm->stack);
   vm->objects = NULL;
+  mapInit(&vm->strings);
 }
-void closeVM(VM *vm) { freeObjects(); }
+void closeVM(VM *vm) {
+  freeObjects();
+  mapReset(&vm->strings);
+}
 
 static Value peek(VM *vm, int distance) {
   return vm->stack->data[vm->stack->top - distance];

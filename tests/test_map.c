@@ -1,4 +1,5 @@
 #include "../src/map.h"
+#include "../src/object.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -223,7 +224,7 @@ TEST(test_many_insertions_trigger_resize) {
   hashMap map;
   mapInit(&map);
 
-  int initialCapacity = map.capacity;
+  int initialCapacity = 256;
   int numElements = initialCapacity * 2; // Force resize
 
   ObjString **keys = malloc(sizeof(ObjString *) * numElements);

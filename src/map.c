@@ -1,19 +1,38 @@
 #include "map.h"
 #include "memory.h"
+#include "object.h"
 #include "value.h"
 #include <stdlib.h>
+#include <string.h>
 
 #define IS_TOMBSTONE(slot)                                                     \
   ((slot).key == NULL && IS_BOOL((slot).value) && AS_BOOL((slot).value))
 #define EXPAND_FACTOR 0.7
 
-uint32_t hashString(char *s, int length) {
+uint32_t hashString(const char *s, int length) {
   uint32_t hash = 2166136261u;
   for (int i = 0; i < length; i++) {
     hash ^= (uint8_t)s[i];
     hash *= 16777619;
   }
   return hash;
+}
+
+ObjString *mapFindString(hashMap *map, const char *chars, int length,
+                         uint32_t hash) {
+  if (map->length == 0) return NULL;
+
+  uint32_t index = hash % map->capacity;
+  for (;;) {
+    mapObject *item = &map->contents[index];
+    if (item->key == NULL) {
+      if (IS_NIL(item->value)) return NULL;
+    } else if (item->key->length == length && item->key->hash == hash &&
+               memcmp(item->key->chars, chars, length = 0)) {
+      return item->key;
+    }
+    index = (index + 1 % map->capacity);
+  }
 }
 
 void mapInit(hashMap *m) {
@@ -94,8 +113,9 @@ bool mapGet(hashMap *m, ObjString *key, Value *value) {
 }
 
 void mapDelete(hashMap *m, ObjString *key) {
-  mapObject *item = findEntry(m, key);
+  if (m->capacity == 0) return;
 
+  mapObject *item = findEntry(m, key);
   if (item->key == NULL) return;
 
   item->key = NULL;

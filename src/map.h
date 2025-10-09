@@ -1,7 +1,8 @@
 #ifndef svm_map_h
 #define svm_map_h
-#include "object.h"
 #include "value.h"
+
+typedef struct ObjString ObjString;
 
 typedef struct {
   ObjString *key;
@@ -14,11 +15,13 @@ typedef struct {
   mapObject *contents;
 } hashMap;
 
-uint32_t hashString(char *s, int length);
+uint32_t hashString(const char *s, int length);
 void mapInit(hashMap *m);
 void mapReset(hashMap *m);
 void mapInsert(hashMap *m, ObjString *key, Value value);
 bool mapGet(hashMap *m, ObjString *key, Value *value);
 void mapDelete(hashMap *m, ObjString *key);
+ObjString *mapFindString(hashMap *map, const char *chars, int length,
+                         uint32_t hash);
 
 #endif
