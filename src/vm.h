@@ -30,6 +30,7 @@ typedef struct VM {
   uint8_t *ip;
   hashMap strings;
   Obj *objects;
+  hashMap globals;
 } VM;
 
 typedef enum {

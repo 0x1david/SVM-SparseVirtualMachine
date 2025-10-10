@@ -55,6 +55,16 @@ static void consume(Parser *parser, Lexer *lexer, TokType type,
   errorAtCurrent(parser, msg);
 }
 
+static bool check(Parser *parser, Lexer *lexer, TokType type) {
+  return parser->current.type == type;
+}
+
+static bool match(Parser *parser, Lexer *lexer, TokType type) {
+  if (!check(parser, lexer, type)) return false;
+  advance(parser, lexer);
+  return true;
+}
+
 static void emitByte(Parser *parser, uint8_t byte) {
   writeChunk(currentChunk(), byte, parser->previous.line, 0); // TODO: offset
 }
@@ -90,31 +100,110 @@ static void parsePrecedence(VM *vm, Parser *parser, Lexer *lexer,
     error(parser, "Expect expression.");
     return;
   }
-
-  prefixRule(vm, parser, lexer);
+  bool canAssign = precedence <= PREC_ASSIGNMENT;
+  prefixRule(vm, parser, lexer, canAssign);
 
   while (precedence <= getRule(parser->current.type)->precedence) {
     advance(parser, lexer);
     ParseFn infixRule = getRule(parser->previous.type)->infix;
-    infixRule(vm, parser, lexer);
+    infixRule(vm, parser, lexer, canAssign);
   }
+  if (canAssign && match(parser, lexer, TOK_EQUAL)) {
+    error(parser, "Invalid assignment target");
+  }
+}
+static uint8_t identifierConstant(VM *vm, Parser *parser) {
+  return makeConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start,
+                                                 parser->previous.length)));
+}
+static uint8_t parseVar(VM *vm, Parser *parser, Lexer *lexer,
+                        const char *errorMessage) {
+  consume(parser, lexer, TOK_IDENTIFIER, errorMessage);
+  return identifierConstant(vm, parser);
+}
+
+static void defineVar(Parser *parser, uint8_t global) {
+  emitBytes(parser, OP_DEFINE_GLOBAL, global);
 }
 
 static void expression(VM *vm, Parser *parser, Lexer *lexer) {
   parsePrecedence(vm, parser, lexer, PREC_ASSIGNMENT);
 }
-static void grouping(VM *vm, Parser *parser, Lexer *lexer) {
+
+static void varDecl(VM *vm, Parser *parser, Lexer *lexer) {
+  uint8_t global = parseVar(vm, parser, lexer, "Expect variable name.");
+
+  if (match(parser, lexer, TOK_EQUAL)) {
+    expression(vm, parser, lexer);
+  } else {
+    emitByte(parser, OP_NIL);
+  }
+  consume(parser, lexer, TOK_SEMICOLON,
+          "Expected ';' after variable declaration.");
+
+  defineVar(parser, global);
+}
+
+static void expressionStmt(VM *vm, Parser *parser, Lexer *lexer) {
+  expression(vm, parser, lexer);
+  consume(parser, lexer, TOK_SEMICOLON, "Expect ';' after expression.");
+  emitByte(parser, OP_POP);
+}
+static void printStmt(VM *vm, Parser *parser, Lexer *lexer) {
+  expression(vm, parser, lexer);
+  consume(parser, lexer, TOK_SEMICOLON, "Expect ';' after value.");
+  emitByte(parser, OP_PRINT);
+}
+
+static void synchronize(Parser *parser, Lexer *lexer) {
+  parser->isPanicing = false;
+
+  while (parser->current.type != TOK_EOF) {
+    if (parser->previous.type == TOK_SEMICOLON) return;
+    switch (parser->current.type) {
+      case TOK_CLASS:
+      case TOK_FUN:
+      case TOK_VAR:
+      case TOK_FOR:
+      case TOK_IF:
+      case TOK_WHILE:
+      case TOK_PRINT:
+      case TOK_RETURN: return;
+      default:;
+    }
+    advance(parser, lexer);
+  }
+}
+static void stmt(VM *vm, Parser *parser, Lexer *lexer);
+static void decl(VM *vm, Parser *parser, Lexer *lexer);
+
+static void decl(VM *vm, Parser *parser, Lexer *lexer) {
+  if (match(parser, lexer, TOK_VAR)) {
+    varDecl(vm, parser, lexer);
+  } else {
+    stmt(vm, parser, lexer);
+  }
+  if (parser->isPanicing) synchronize(parser, lexer);
+}
+static void stmt(VM *vm, Parser *parser, Lexer *lexer) {
+  if (match(parser, lexer, TOK_PRINT)) {
+    printStmt(vm, parser, lexer);
+  } else {
+    expressionStmt(vm, parser, lexer);
+  }
+}
+static void grouping(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
   expression(vm, parser, lexer);
   consume(parser, lexer, TOK_RIGHT_PAREN, "Expect `)` after expression.");
 }
 static void emitConstant(Parser *parser, Value value) {
   emitBytes(parser, OP_CONSTANT, makeConstant(parser, value));
 }
-static void number(VM *vm, Parser *parser, Lexer *lexer) {
+static void number(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
   double value = strtod(parser->previous.start, NULL);
   emitConstant(parser, NUMBER_VAL(value));
 }
-static void unary(VM *vm, Parser *parser, Lexer *lexer) {
+static void unary(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
   TokType opType = parser->previous.type;
 
   parsePrecedence(vm, parser, lexer, PREC_UNARY);
@@ -126,7 +215,7 @@ static void unary(VM *vm, Parser *parser, Lexer *lexer) {
   }
 }
 
-static void binary(VM *vm, Parser *parser, Lexer *lexer) {
+static void binary(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
   TokType opType = parser->previous.type;
   ParseRule *rule = getRule(opType);
   parsePrecedence(vm, parser, lexer, (Precedence)rule->precedence + 1);
@@ -147,7 +236,7 @@ static void binary(VM *vm, Parser *parser, Lexer *lexer) {
   }
 }
 
-static void literal(VM *vm, Parser *parser, Lexer *lexer) {
+static void literal(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
   switch (parser->previous.type) {
     case TOK_FALSE: emitByte(parser, OP_FALSE); break;
     case TOK_NIL: emitByte(parser, OP_NIL); break;
@@ -156,9 +245,25 @@ static void literal(VM *vm, Parser *parser, Lexer *lexer) {
   }
 }
 
-static void string(VM *vm, Parser *parser, Lexer *lexer) {
+static void string(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
   emitConstant(parser, OBJ_VAL(copyString(vm, parser->previous.start + 1,
                                           parser->previous.length - 2)));
+};
+
+static void namedVar(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
+  uint8_t arg = identifierConstant(vm, parser);
+
+  if (canAssign && match(parser, lexer, TOK_EQUAL)) {
+    expression(vm, parser, lexer);
+    emitBytes(parser, OP_SET_GLOBAL, arg);
+  } else {
+
+    emitBytes(parser, OP_GET_GLOBAL, arg);
+  }
+};
+
+static void var(VM *vm, Parser *parser, Lexer *lexer, bool canAssign) {
+  namedVar(vm, parser, lexer, canAssign);
 };
 
 bool compile(VM *vm, const char *src, Chunk *chunk) {
@@ -168,8 +273,10 @@ bool compile(VM *vm, const char *src, Chunk *chunk) {
   compilingChunk = chunk;
 
   advance(&parser, &lexer);
-  expression(vm, &parser, &lexer);
-  consume(&parser, &lexer, TOK_EOF, "Expect end of expression");
+
+  while (!match(&parser, &lexer, TOK_EOF)) {
+    decl(vm, &parser, &lexer);
+  }
   endCompiler(&parser);
   return !parser.hadError;
 }
@@ -194,7 +301,7 @@ static ParseRule rules[] = {
     [TOK_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOK_LESS] = {NULL, binary, PREC_COMPARISON},
     [TOK_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
-    [TOK_IDENTIFIER] = {NULL, NULL, PREC_NONE},
+    [TOK_IDENTIFIER] = {var, NULL, PREC_NONE},
     [TOK_NUMBER] = {number, NULL, PREC_NONE},
     [TOK_AND] = {NULL, NULL, PREC_NONE},
     [TOK_CLASS] = {NULL, NULL, PREC_NONE},

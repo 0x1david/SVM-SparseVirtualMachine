@@ -18,7 +18,7 @@ typedef struct {
 uint32_t hashString(const char *s, int length);
 void mapInit(hashMap *m);
 void mapReset(hashMap *m);
-void mapInsert(hashMap *m, ObjString *key, Value value);
+bool mapInsert(hashMap *m, ObjString *key, Value value);
 bool mapGet(hashMap *m, ObjString *key, Value *value);
 void mapDelete(hashMap *m, ObjString *key);
 ObjString *mapFindString(hashMap *map, const char *chars, int length,

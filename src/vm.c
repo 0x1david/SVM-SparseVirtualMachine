@@ -15,11 +15,14 @@ void initVM(VM *vm) {
   vm->stack = malloc(sizeof(Stack));
   stackInit(vm->stack);
   vm->objects = NULL;
+
   mapInit(&vm->strings);
+  mapInit(&vm->globals);
 }
 void closeVM(VM *vm) {
   freeObjects();
   mapReset(&vm->strings);
+  mapReset(&vm->globals);
 }
 
 static Value peek(VM *vm, int distance) {
@@ -58,6 +61,7 @@ static void runtimeError(VM *vm, const char *format, ...) {
 InterpretResult run(VM *vm) {
 #define READ_BYTE() (*vm->ip++)
 #define READ_CONSTANT() (vm->chunk->constants.values[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 #define READ_CONSTANT_LONG()                                                   \
   ({                                                                           \
     uint8_t low = READ_BYTE();                                                 \
@@ -79,10 +83,6 @@ InterpretResult run(VM *vm) {
 
     uint8_t instruction;
     switch (instruction = READ_BYTE()) {
-      case OP_RETURN:
-        printValue(stackPop(vm->stack));
-        printf("\n");
-        return INTERPRET_OK;
       case OP_CONSTANT: {
         Value constant = READ_CONSTANT();
         stackPush(vm->stack, constant);
@@ -125,13 +125,51 @@ InterpretResult run(VM *vm) {
           runtimeError(vm, "Operands must be two numbers or two strings.");
           return INTERPRET_RUNTIME_ERROR;
         }
+        break;
       }
+      case OP_PRINT: {
+        printValue(stackPop(vm->stack));
+        printf("\n");
+        break;
+      }
+      case OP_POP: {
+        stackPop(vm->stack);
+        break;
+      }
+      case OP_DEFINE_GLOBAL: {
+        ObjString *name = READ_STRING();
+        mapInsert(&vm->globals, name, peek(vm, 0));
+        stackPop(vm->stack);
+        break;
+      }
+      case OP_GET_GLOBAL: {
+        ObjString *name = READ_STRING();
+        Value value;
+        if (!mapGet(&vm->globals, name, &value)) {
+          runtimeError(vm, "Undefined variable '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        stackPush(vm->stack, value);
+        break;
+      }
+
+      case OP_SET_GLOBAL: {
+        ObjString *name = READ_STRING();
+        if (mapInsert(&vm->globals, name, peek(vm, 0))) {
+          mapDelete(&vm->globals, name);
+          runtimeError(vm, "Undefined variable '%s'.", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+      case OP_RETURN: return INTERPRET_OK;
     }
   }
-}
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef READ_CONSTANT_LONG
+}
 
 InterpretResult interpret(VM *vm, const char *src) {
   Chunk chunk;

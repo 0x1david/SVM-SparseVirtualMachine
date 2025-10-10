@@ -28,10 +28,10 @@ ObjString *mapFindString(hashMap *map, const char *chars, int length,
     if (item->key == NULL) {
       if (IS_NIL(item->value)) return NULL;
     } else if (item->key->length == length && item->key->hash == hash &&
-               memcmp(item->key->chars, chars, length = 0)) {
+               memcmp(item->key->chars, chars, length) == 0) {
       return item->key;
     }
-    index = (index + 1 % map->capacity);
+    index = ((index + 1) % map->capacity);
   }
 }
 
@@ -90,7 +90,7 @@ static mapObject *findEntry(hashMap *m, ObjString *key) {
   }
 };
 
-void mapInsert(hashMap *m, ObjString *key, Value value) {
+bool mapInsert(hashMap *m, ObjString *key, Value value) {
   if (m->length + 1 > (EXPAND_FACTOR * m->capacity)) { mapReallocate(m); }
 
   mapObject *item = findEntry(m, key);
@@ -100,6 +100,7 @@ void mapInsert(hashMap *m, ObjString *key, Value value) {
   item->value = value;
 
   if (is_new_key) { m->length += 1; }
+  return is_new_key;
 }
 
 bool mapGet(hashMap *m, ObjString *key, Value *value) {
